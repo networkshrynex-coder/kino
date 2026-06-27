@@ -58,7 +58,6 @@ class Particle {
     update() {
         this.x += this.vx;
         this.y += this.vy;
-
         if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
         if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
     }
@@ -86,7 +85,6 @@ function drawConnections() {
             const dx = particles[i].x - particles[j].x;
             const dy = particles[i].y - particles[j].y;
             const dist = Math.sqrt(dx * dx + dy * dy);
-
             if (dist < maxDist) {
                 const opacity = (1 - dist / maxDist) * 0.12;
                 ctx.beginPath();
@@ -102,12 +100,7 @@ function drawConnections() {
 
 function animateParticles() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    particles.forEach(p => {
-        p.update();
-        p.draw();
-    });
-
+    particles.forEach(p => { p.update(); p.draw(); });
     drawConnections();
     requestAnimationFrame(animateParticles);
 }
@@ -115,32 +108,14 @@ function animateParticles() {
 resizeCanvas();
 initParticles();
 animateParticles();
-
-window.addEventListener('resize', () => {
-    resizeCanvas();
-    initParticles();
-});
+window.addEventListener('resize', () => { resizeCanvas(); initParticles(); });
 
 // --- Scroll Reveal Animation ---
+// Using IntersectionObserver to add .visible class for staggered fade-in
 const revealObserver = new IntersectionObserver((entries) => {
-    entries.forEach((entry, index) => {
+    entries.forEach(entry => {
         if (entry.isIntersecting) {
-            // Stagger delay based on index within the same parent
-            const parent = entry.target.parentElement;
-            const siblings = parent ? Array.from(parent.children).filter(c => c.classList.contains('reveal')) : [];
-            const i = siblings.indexOf(entry.target);
-            const delay = i * 80;
-
-            setTimeout(() => {
-                entry.target.classList.add('visible');
-            }, delay);
-
-            // Counter animation for stats
-            if (entry.target.classList.contains('stat-number')) {
-                animateCounter(entry.target);
-            }
-
-            // Stop observing once revealed
+            entry.target.classList.add('visible');
             revealObserver.unobserve(entry.target);
         }
     });
@@ -149,18 +124,23 @@ const revealObserver = new IntersectionObserver((entries) => {
     rootMargin: '0px 0px -20px 0px'
 });
 
-// Observe ALL reveal elements — this is the key fix
+// Observe all .reveal elements
 document.querySelectorAll('.reveal').forEach(el => {
     revealObserver.observe(el);
 });
 
+// SAFETY FALLBACK: Make everything visible after 1.5s
+// This ensures content is ALWAYS visible even if observer doesn't fire
+setTimeout(() => {
+    document.querySelectorAll('.reveal:not(.visible)').forEach(el => {
+        el.classList.add('visible');
+    });
+}, 1500);
+
 // --- Counter Animation ---
 function animateCounter(el) {
     const target = el.dataset.target;
-    if (target === '∞') {
-        el.textContent = '∞';
-        return;
-    }
+    if (target === '∞') { el.textContent = '∞'; return; }
 
     const targetNum = parseInt(target);
     const duration = 2000;
@@ -171,21 +151,15 @@ function animateCounter(el) {
         const progress = Math.min(elapsed / duration, 1);
         const eased = 1 - Math.pow(1 - progress, 3);
         el.textContent = Math.round(targetNum * eased);
-
-        if (progress < 1) {
-            requestAnimationFrame(update);
-        }
+        if (progress < 1) requestAnimationFrame(update);
     }
-
     requestAnimationFrame(update);
 }
 
 // --- Smooth Scroll Helper ---
 function scrollToSection(id) {
     const el = document.getElementById(id);
-    if (el) {
-        el.scrollIntoView({ behavior: 'smooth' });
-    }
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
 }
 
 // --- Card Hover Tilt Effect ---
@@ -198,10 +172,8 @@ document.querySelectorAll('[data-tilt]').forEach(card => {
         const centerY = rect.height / 2;
         const rotateX = (y - centerY) / centerY * -2;
         const rotateY = (x - centerX) / centerX * 2;
-
         card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-4px)`;
     });
-
     card.addEventListener('mouseleave', () => {
         card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) translateY(0)';
     });
@@ -215,16 +187,11 @@ if (logo) {
         const original = text.textContent;
         const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%';
         let iterations = 0;
-
         const interval = setInterval(() => {
             text.textContent = original
                 .split('')
-                .map((char, i) => {
-                    if (i < iterations) return original[i];
-                    return chars[Math.floor(Math.random() * chars.length)];
-                })
+                .map((char, i) => i < iterations ? original[i] : chars[Math.floor(Math.random() * chars.length)])
                 .join('');
-
             if (iterations >= original.length) clearInterval(interval);
             iterations += 1 / 3;
         }, 30);
@@ -236,9 +203,7 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'k' && !e.target.matches('input, textarea')) {
         document.body.style.transition = 'filter 0.1s';
         document.body.style.filter = 'hue-rotate(60deg)';
-        setTimeout(() => {
-            document.body.style.filter = 'hue-rotate(0deg)';
-        }, 200);
+        setTimeout(() => { document.body.style.filter = 'hue-rotate(0deg)'; }, 200);
     }
 });
 
