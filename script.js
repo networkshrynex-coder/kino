@@ -122,28 +122,36 @@ window.addEventListener('resize', () => {
 });
 
 // --- Scroll Reveal Animation ---
-const observerOptions = {
-    threshold: 0.1,
-    rootMargin: '0px 0px -50px 0px'
-};
-
-const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
+const revealObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry, index) => {
         if (entry.isIntersecting) {
-            entry.target.classList.add('visible');
+            // Stagger delay based on index within the same parent
+            const parent = entry.target.parentElement;
+            const siblings = parent ? Array.from(parent.children).filter(c => c.classList.contains('reveal')) : [];
+            const i = siblings.indexOf(entry.target);
+            const delay = i * 80;
+
+            setTimeout(() => {
+                entry.target.classList.add('visible');
+            }, delay);
 
             // Counter animation for stats
             if (entry.target.classList.contains('stat-number')) {
                 animateCounter(entry.target);
             }
+
+            // Stop observing once revealed
+            revealObserver.unobserve(entry.target);
         }
     });
-}, observerOptions);
+}, {
+    threshold: 0.05,
+    rootMargin: '0px 0px -20px 0px'
+});
 
-// Observe stat numbers
-document.querySelectorAll('.stat-number').forEach(el => {
-    el.classList.add('reveal');
-    observer.observe(el);
+// Observe ALL reveal elements — this is the key fix
+document.querySelectorAll('.reveal').forEach(el => {
+    revealObserver.observe(el);
 });
 
 // --- Counter Animation ---
@@ -161,7 +169,6 @@ function animateCounter(el) {
     function update(currentTime) {
         const elapsed = currentTime - startTime;
         const progress = Math.min(elapsed / duration, 1);
-        // Ease out cubic
         const eased = 1 - Math.pow(1 - progress, 3);
         el.textContent = Math.round(targetNum * eased);
 
